@@ -1,6 +1,6 @@
 import clsx from "clsx";
 import { useRef, useState } from "react";
-import * as Popover from "@radix-ui/react-popover";
+import { Popover } from "radix-ui";
 
 import {
   CLASSES,
@@ -49,11 +49,17 @@ import { getFormValue } from "../actions/actionProperties";
 
 import { useTextEditorFocus } from "../hooks/useTextEditorFocus";
 
+import { actionToggleViewMode } from "../actions/actionToggleViewMode";
+
 import { getToolbarTools } from "./shapes";
 
 import "./Actions.scss";
 
-import { useDevice, useExcalidrawContainer } from "./App";
+import {
+  useEditorInterface,
+  useStylesPanelMode,
+  useExcalidrawContainer,
+} from "./App";
 import Stack from "./Stack";
 import { ToolButton } from "./ToolButton";
 import { ToolPopover } from "./ToolPopover";
@@ -75,6 +81,7 @@ import {
   adjustmentsIcon,
   DotsHorizontalIcon,
   SelectionIcon,
+  pencilIcon,
 } from "./icons";
 
 import { Island } from "./Island";
@@ -151,7 +158,7 @@ export const SelectedShapeActions = ({
   const isEditingTextOrNewElement = Boolean(
     appState.editingTextElement || appState.newElement,
   );
-  const device = useDevice();
+  const editorInterface = useEditorInterface();
   const isRTL = document.documentElement.getAttribute("dir") === "rtl";
 
   const showFillIcons =
@@ -219,7 +226,7 @@ export const SelectedShapeActions = ({
       {(appState.activeTool.type === "text" ||
         targetElements.some(isTextElement)) && (
         <>
-          {renderAction("changeFontFamily")}
+          <fieldset>{renderAction("changeFontFamily")}</fieldset>
           {renderAction("changeFontSize")}
           {(appState.activeTool.type === "text" ||
             suppportsHorizontalAlign(targetElements, elementsMap)) &&
@@ -292,8 +299,10 @@ export const SelectedShapeActions = ({
         <fieldset>
           <legend>{t("labels.actions")}</legend>
           <div className="buttonList">
-            {!device.editor.isMobile && renderAction("duplicateSelection")}
-            {!device.editor.isMobile && renderAction("deleteSelectedElements")}
+            {editorInterface.formFactor !== "phone" &&
+              renderAction("duplicateSelection")}
+            {editorInterface.formFactor !== "phone" &&
+              renderAction("deleteSelectedElements")}
             {renderAction("group")}
             {renderAction("ungroup")}
             {showLinkIcon && renderAction("hyperlink")}
@@ -1041,6 +1050,9 @@ export const ShapesSwitcher = ({
   UIOptions: AppProps["UIOptions"];
 }) => {
   const [isExtraToolsMenuOpen, setIsExtraToolsMenuOpen] = useState(false);
+  const stylesPanelMode = useStylesPanelMode();
+  const isFullStylesPanel = stylesPanelMode === "full";
+  const isCompactStylesPanel = stylesPanelMode === "compact";
 
   const SELECTION_TOOLS = [
     {
@@ -1058,7 +1070,7 @@ export const ShapesSwitcher = ({
   const frameToolSelected = activeTool.type === "frame";
   const laserToolSelected = activeTool.type === "laser";
   const lassoToolSelected =
-    app.state.stylesPanelMode === "full" &&
+    isFullStylesPanel &&
     activeTool.type === "lasso" &&
     app.state.preferredSelectionTool.type !== "lasso";
 
@@ -1069,8 +1081,9 @@ export const ShapesSwitcher = ({
   return (
     <>
       {getToolbarTools(app).map(
-        ({ value, icon, key, numericKey, fillable }, index) => {
+        ({ value, icon, key, numericKey, fillable, toolbar }) => {
           if (
+            toolbar === false ||
             UIOptions.tools?.[
               value as Extract<
                 typeof value,
@@ -1087,11 +1100,14 @@ export const ShapesSwitcher = ({
           const shortcut = letter
             ? `${letter} ${t("helpDialog.or")} ${numericKey}`
             : `${numericKey}`;
+          const keybindingLabel =
+            value === "hand" ? undefined : numericKey || letter;
+
           // when in compact styles panel mode (tablet)
           // use a ToolPopover for selection/lasso toggle as well
           if (
             (value === "selection" || value === "lasso") &&
-            app.state.stylesPanelMode === "compact"
+            isCompactStylesPanel
           ) {
             return (
               <ToolPopover
@@ -1131,7 +1147,7 @@ export const ShapesSwitcher = ({
               checked={activeTool.type === value}
               name="editor-current-shape"
               title={`${capitalizeString(label)} — ${shortcut}`}
-              keyBindingLabel={numericKey || letter}
+              keyBindingLabel={keybindingLabel}
               aria-label={capitalizeString(label)}
               aria-keyshortcuts={shortcut}
               data-testid={`toolbar-${value}`}
@@ -1225,7 +1241,7 @@ export const ShapesSwitcher = ({
           >
             {t("toolBar.laser")}
           </DropdownMenu.Item>
-          {app.state.stylesPanelMode === "full" && (
+          {isFullStylesPanel && (
             <DropdownMenu.Item
               onSelect={() => app.setActiveTool({ type: "lasso" })}
               icon={LassoIcon}
@@ -1251,9 +1267,9 @@ export const ShapesSwitcher = ({
               onSelect={() => app.onMagicframeToolSelect()}
               icon={MagicIcon}
               data-testid="toolbar-magicframe"
+              badge={<DropdownMenu.Item.Badge>AI</DropdownMenu.Item.Badge>}
             >
               {t("toolBar.magicframe")}
-              <DropdownMenu.Item.Badge>AI</DropdownMenu.Item.Badge>
             </DropdownMenu.Item>
           )}
         </DropdownMenu.Content>
@@ -1295,7 +1311,7 @@ export const UndoRedoActions = ({
   </div>
 );
 
-export const ExitZenModeAction = ({
+export const ExitZenModeButton = ({
   actionManager,
   showExitZenModeBtn,
 }: {
@@ -1310,5 +1326,19 @@ export const ExitZenModeAction = ({
     onClick={() => actionManager.executeAction(actionToggleZenMode)}
   >
     {t("buttons.exitZenMode")}
+  </button>
+);
+
+export const ExitViewModeButton = ({
+  actionManager,
+}: {
+  actionManager: ActionManager;
+}) => (
+  <button
+    type="button"
+    className="disable-view-mode"
+    onClick={() => actionManager.executeAction(actionToggleViewMode)}
+  >
+    {pencilIcon}
   </button>
 );

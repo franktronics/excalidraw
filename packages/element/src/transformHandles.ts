@@ -1,8 +1,6 @@
 import {
   DEFAULT_TRANSFORM_HANDLE_SPACING,
-  isAndroid,
-  isIOS,
-  isMobileOrTablet,
+  type EditorInterface,
 } from "@excalidraw/common";
 
 import { pointFrom, pointRotateRads } from "@excalidraw/math";
@@ -10,10 +8,10 @@ import { pointFrom, pointRotateRads } from "@excalidraw/math";
 import type { Radians } from "@excalidraw/math";
 
 import type {
-  Device,
   InteractiveCanvasAppState,
   Zoom,
 } from "@excalidraw/excalidraw/types";
+import type { Bounds } from "@excalidraw/common";
 
 import { getElementAbsoluteCoords } from "./bounds";
 import {
@@ -23,7 +21,6 @@ import {
   isLinearElement,
 } from "./typeChecks";
 
-import type { Bounds } from "./bounds";
 import type {
   ElementsMap,
   ExcalidrawElement,
@@ -112,20 +109,21 @@ const generateTransformHandle = (
   return [xx - width / 2, yy - height / 2, width, height];
 };
 
-export const canResizeFromSides = (device: Device) => {
-  if (device.viewport.isMobile) {
-    return false;
-  }
-
-  if (device.isTouchScreen && (isAndroid || isIOS)) {
+export const canResizeFromSides = (editorInterface: EditorInterface) => {
+  if (
+    editorInterface.formFactor === "phone" &&
+    editorInterface.userAgent.isMobileDevice
+  ) {
     return false;
   }
 
   return true;
 };
 
-export const getOmitSidesForDevice = (device: Device) => {
-  if (canResizeFromSides(device)) {
+export const getOmitSidesForEditorInterface = (
+  editorInterface: EditorInterface,
+) => {
+  if (canResizeFromSides(editorInterface)) {
     return DEFAULT_OMIT_SIDES;
   }
 
@@ -330,8 +328,12 @@ export const getTransformHandles = (
 export const hasBoundingBox = (
   elements: readonly NonDeletedExcalidrawElement[],
   appState: InteractiveCanvasAppState,
+  editorInterface: EditorInterface,
 ) => {
-  if (appState.selectedLinearElement?.isEditing) {
+  if (
+    appState.selectedLinearElement?.isEditing ||
+    appState.selectedLinearElement?.isDragging
+  ) {
     return false;
   }
   if (elements.length > 1) {
@@ -348,5 +350,5 @@ export const hasBoundingBox = (
 
   // on mobile/tablet we currently don't show bbox because of resize issues
   // (also prob best for simplicity's sake)
-  return element.points.length > 2 && !isMobileOrTablet();
+  return element.points.length > 2 && !editorInterface.userAgent.isMobileDevice;
 };

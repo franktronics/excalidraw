@@ -10,11 +10,10 @@ import {
   isWritableElement,
 } from "@excalidraw/common";
 
-import { actionToggleShapeSwitch } from "@excalidraw/excalidraw/actions/actionToggleShapeSwitch";
-
-import { getShortcutKey } from "@excalidraw/excalidraw/shortcut";
-
 import type { MarkRequired } from "@excalidraw/common/utility-types";
+
+import { actionToggleShapeSwitch } from "../../actions/actionToggleShapeSwitch";
+import { getShortcutKey } from "../../shortcut";
 
 import {
   actionClearCanvas,
@@ -44,7 +43,6 @@ import { getSelectedElements } from "../../scene";
 import {
   LockedIcon,
   UnlockedIcon,
-  clockIcon,
   searchIcon,
   boltIcon,
   bucketFillIcon,
@@ -52,6 +50,7 @@ import {
   mermaidLogoIcon,
   brainIconThin,
   LibraryIcon,
+  historyCommandIcon,
 } from "../icons";
 
 import { SHAPES } from "../shapes";
@@ -903,7 +902,7 @@ function CommandPaletteInner({
         ref={inputRef}
       />
 
-      {!app.device.viewport.isMobile && (
+      {app.editorInterface.formFactor !== "phone" && (
         <div className="shortcuts-wrapper">
           <CommandShortcutHint shortcut="↑↓">
             {t("commandPalette.shortcuts.select")}
@@ -928,7 +927,7 @@ function CommandPaletteInner({
                   marginLeft: "6px",
                 }}
               >
-                {clockIcon}
+                {historyCommandIcon}
               </div>
             </div>
             <CommandItem
@@ -937,7 +936,7 @@ function CommandPaletteInner({
               onClick={(event) => executeCommand(lastUsed, event)}
               disabled={!isCommandAvailable(lastUsed)}
               onMouseMove={() => setCurrentCommand(lastUsed)}
-              showShortcut={!app.device.viewport.isMobile}
+              showShortcut={app.editorInterface.formFactor !== "phone"}
               appState={uiAppState}
             />
           </div>
@@ -955,7 +954,7 @@ function CommandPaletteInner({
                     isSelected={command.label === currentCommand?.label}
                     onClick={(event) => executeCommand(command, event)}
                     onMouseMove={() => setCurrentCommand(command)}
-                    showShortcut={!app.device.viewport.isMobile}
+                    showShortcut={app.editorInterface.formFactor !== "phone"}
                     appState={uiAppState}
                     size={category === "Library" ? "large" : "small"}
                   />
@@ -1034,7 +1033,7 @@ const CommandItem = ({
             size="var(--icon-size, 1rem)"
             icon={
               typeof command.icon === "function"
-                ? command.icon(appState)
+                ? command.icon(appState, [])
                 : command.icon
             }
           />

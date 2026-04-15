@@ -3,13 +3,15 @@ import clsx from "clsx";
 
 import { capitalizeString } from "@excalidraw/common";
 
-import * as Popover from "@radix-ui/react-popover";
+import { Popover } from "radix-ui";
 
 import { trackEvent } from "../analytics";
 
 import { ToolButton } from "./ToolButton";
 
 import "./ToolPopover.scss";
+
+import { useExcalidrawContainer } from "./App";
 
 import type { AppClassProperties } from "../types";
 
@@ -50,6 +52,7 @@ export const ToolPopover = ({
   const currentType = activeTool.type;
   const isActive = displayedOption.type === currentType;
   const SIDE_OFFSET = 32 / 2 + 10;
+  const { container } = useExcalidrawContainer();
 
   // if currentType is not in options, close popup
   if (!options.some((o) => o.type === currentType) && isPopupOpen) {
@@ -90,6 +93,7 @@ export const ToolPopover = ({
       <Popover.Content
         className="tool-popover-content"
         sideOffset={SIDE_OFFSET}
+        collisionBoundary={container ?? undefined}
       >
         {options.map(({ type, icon, title }) => (
           <ToolButton
