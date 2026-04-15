@@ -1,10 +1,9 @@
 services:
-
   excalidraw:
     image: excalidraw/excalidraw:latest
     container_name: excalidraw
     expose:
-      - 80 # web-ui for drawing
+      - 80
     restart: unless-stopped
     entrypoint: /bin/sh
     command:
@@ -17,7 +16,7 @@ services:
     stdin_open: true
     environment:
       - NODE_ENV=production
-      - VITE_APP_WS_SERVER_URL=https://draw2gether.excalidraw.tenepo.com
+      - VITE_APP_WS_SERVER_URL=https://draw2gether.example.com
     healthcheck:
       test: ["CMD-SHELL", "wget -qO- http://127.0.0.1:80/ >/dev/null 2>&1 || exit 1"]
       interval: 30s
@@ -35,19 +34,12 @@ services:
     tmpfs:
       - /tmp:rw,noexec,nosuid,size=64m
       - /var/cache/nginx/client_temp:rw,noexec,nosuid,size=64m
-    networks:
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.excalidraw.rule=Host(`draw.example.com`)
-      - traefik.http.services.excalidraw.loadbalancer.server.port=80
-      - traefik.docker.network=proxy
 
   excalidraw-room:
     image: excalidraw/excalidraw-room:latest
     container_name: excalidraw-room
     expose:
-      - 80 # web-socket for collaboration
+      - 80
     restart: unless-stopped
     read_only: true
     tmpfs:
@@ -62,14 +54,3 @@ services:
       timeout: 5s
       retries: 3
       start_period: 20s
-    networks:
-      - proxy
-    labels:
-      - traefik.enable=true
-      - traefik.http.routers.excalidraw-collab.rule=Host(`draw2gether.example.com`)
-      - traefik.http.services.excalidraw-collab.loadbalancer.server.port=80
-      - traefik.docker.network=proxy
-
-networks:
-  proxy:
-    external: true
